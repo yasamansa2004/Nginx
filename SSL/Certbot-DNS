@@ -1,0 +1,96 @@
+When your domain is behind the DNS your nginxx can't see your IP. only can see DNS IP and when you want to get SSL with certBOT, you going to be issue. so to fixing that:
+you have to use:
+
+    sudo certbot -d *.connectteb.com -d connectteb.com  --manual --preferred-challenges dns certonly
+
+this command give you token so you must to go:
+To add a TXT record in ArvanCloud DNS, do this:
+
+✅ Steps (ArvanCloud Panel)
+
+Log in to ArvanCloud panel
+
+Go to DNS section
+
+Select your domain
+
+Open the Records (رکوردها) tab
+
+Click Add record (افزودن رکورد)
+
+Set the fields like this:
+
+Type: TXT
+
+Name / Host:
+
+Use @ → for root domain (example.com)
+
+Use _acme-challenge → for SSL validation
+
+Use something like google._domainkey → for email/DKIM
+
+Value / Content:
+
+Paste the TXT value exactly (no quotes unless Arvan adds them automatically)
+
+TTL:
+
+Default (Auto or 300 seconds is fine)
+
+Click Save ✅
+
+
+For this host:
+
+_acme-challenge.saller.beroztest.ir
+
+✅ What to enter in ArvanCloud TXT record
+
+In ArvanCloud you must NOT enter the full domain.
+You only enter the relative name.
+
+Correct configuration:
+
+Type: TXT
+
+Name (Host):
+
+_acme-challenge.saller
+
+
+Value (Content):
+
+<token provided by certbot / acme.sh>
+
+
+TTL: Default / Auto
+
+ArvanCloud will automatically append the domain, resulting in:
+
+_acme-challenge.saller.beroztest.ir
+
+❌ Common mistake
+
+Do NOT put this in the Name field:
+
+_acme-challenge.saller.beroztest.ir
+
+
+That would create:
+
+_acme-challenge.saller.beroztest.ir.beroztest.ir
+
+
+…and SSL verification will fail.
+
+✅ Verify the TXT record
+
+After saving (wait 1–5 minutes), check with:
+
+dig TXT _acme-challenge.saller.beroztest.ir
+
+
+You should see the exact token returned.
+
+NOTE: if you set this *.berooztest.ir  you can give ssh for all domain
