@@ -1,4 +1,9 @@
- # Basic HTTP Authentication
+sudo apt install apache2-utils  # if htpasswd is not installed
+sudo htpasswd -c /etc/nginx/.htpasswd username
+# It will ask you to set a password
+
+
+# Basic HTTP Authentication
     location /files/ {
         auth_basic "Restricted Content";
         auth_basic_user_file /etc/nginx/.htpasswd;
