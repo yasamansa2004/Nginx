@@ -1,0 +1,132 @@
+2️⃣ Backend Config (API with upstream)
+upstream backend_app {
+    server 127.0.0.1:5000;
+    # server 127.0.0.1:5001; # optional second backend
+    keepalive 16;
+}
+
+
+upstream → Defines backend server(s) for load balancing.
+
+keepalive 16 → Reuse 16 connections for performance.
+
+server {
+    listen 80;
+    server_name api.example.com;
+    return 301 https://$host$request_uri;
+}
+
+
+HTTP → HTTPS redirect for backend.
+
+server {
+    listen 443 ssl http2;
+    server_name api.example.com;
+
+
+HTTPS server for backend API.
+
+HTTP/2 enabled.
+
+    ssl_certificate /etc/letsencrypt/live/api.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+
+
+SSL settings same as frontend (secure TLS, strong ciphers, session cache).
+
+    access_log /var/log/nginx/backend_access.log;
+    error_log /var/log/nginx/backend_error.log;
+
+
+Separate logs for backend API.
+
+    location / {
+        proxy_pass http://backend_app;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
+        client_max_body_size 50M;
+    }
+
+
+proxy_pass http://backend_app; → Forward requests to upstream backend.
+
+proxy_set_header → Pass client info and headers to backend.
+
+timeouts → Handle slow clients safely.
+
+client_max_body_size → Allow large uploads.
+
+    location /health {
+        proxy_pass http://backend_app/health;
+    }
+
+
+Optional health check endpoint for monitoring backend status.
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+
+  Let’s break them line by line:
+
+1️⃣ add_header X-Frame-Options "SAMEORIGIN" always;
+
+Purpose: Prevents your website from being embedded in <iframe>s on other domains.
+
+Why: Stops clickjacking attacks.
+
+SAMEORIGIN → Only allow embedding your own pages, not from other sites.
+
+always → Ensures header is sent even on errors.
+
+2️⃣ add_header X-Content-Type-Options "nosniff" always;
+
+Purpose: Stops browsers from trying to “guess” the content type of a file.
+
+Why: Prevents MIME-type sniffing attacks (e.g., executing malicious scripts).
+
+nosniff → Tells browser to trust the declared Content-Type header.
+
+3️⃣ add_header X-XSS-Protection "1; mode=block" always;
+
+Purpose: Enables the browser’s built-in XSS (cross-site scripting) filter.
+
+1 → Enable XSS filter.
+
+mode=block → If an attack is detected, block rendering the page.
+
+Note: Modern browsers have mostly deprecated this because they rely on Content-Security-Policy instead, but it’s still harmless to include.
+
+4️⃣ add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+Purpose: Controls what referrer information (the previous page URL) is sent when users click links.
+
+no-referrer-when-downgrade → Send the referrer only when navigating from HTTPS → HTTPS. Don’t send it when going from HTTPS → HTTP.
+
+Why: Protects privacy and avoids leaking sensitive URLs.
+
+5️⃣ add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+Purpose: Enforces HTTPS.
+
+max-age=31536000 → Browsers will remember to use HTTPS for 1 year.
+
+includeSubDomains → Applies HTTPS enforcement to all subdomains.
+
+preload → Allows your domain to be added to browser preload lists (HTTPS-only by default).
