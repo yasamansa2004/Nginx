@@ -1,0 +1,92 @@
+1️⃣ Frontend Config (React/Vue SPA)
+# /etc/nginx/sites-available/frontend.conf
+
+
+File path of the Nginx config. Not executed; just reference.
+
+server {
+    listen 80;
+    server_name example.com www.example.com;
+    return 301 https://$host$request_uri;
+}
+
+
+listen 80; → Nginx listens for HTTP requests.
+
+server_name ... → Domains this server responds to.
+
+return 301 https://$host$request_uri; → Redirect all HTTP requests to HTTPS permanently.
+
+server {
+    listen 443 ssl http2;
+    server_name example.com www.example.com;
+
+
+listen 443 ssl http2; → Listen for HTTPS traffic and enable HTTP/2 for faster connections.
+
+server_name → Domains for HTTPS server.
+
+    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+
+Specifies SSL certificate and key for HTTPS.
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+
+
+ssl_protocols → Only allow secure TLS versions.
+
+ssl_ciphers → Only allow strong encryption.
+
+ssl_prefer_server_ciphers → Server chooses ciphers, not client.
+
+ssl_session_cache → Cache SSL sessions for performance.
+
+    access_log /var/log/nginx/frontend_access.log;
+    error_log /var/log/nginx/frontend_error.log;
+
+
+Access and error logs for monitoring and debugging.
+
+    root /var/www/frontend/build;
+    index index.html;
+
+
+root → Path to static frontend files.
+
+index → Default file if URL is a folder.
+
+    location / {
+        try_files $uri /index.html;  # SPA routing
+    }
+
+
+Serve requested file if it exists; otherwise, serve index.html for SPA routing (React/Vue).
+
+    location /static/ {
+        alias /var/www/frontend/build/static/;
+        access_log off;
+        expires 30d;
+    }
+
+
+Serve static assets from /static/.
+
+alias → Map URL to folder.
+
+access_log off; → Don’t log static file requests.
+
+expires 30d; → Cache browser files for 30 days.
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+
+Security headers explained line by line (clickjacking, MIME sniffing, XSS protection, referrer policy, HTTPS enforcement).
