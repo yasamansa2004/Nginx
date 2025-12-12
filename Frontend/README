@@ -90,3 +90,50 @@ expires 30d; → Cache browser files for 30 days.
 
 
 Security headers explained line by line (clickjacking, MIME sniffing, XSS protection, referrer policy, HTTPS enforcement).
+Let’s break them line by line:
+
+1️⃣ add_header X-Frame-Options "SAMEORIGIN" always;
+
+Purpose: Prevents your website from being embedded in <iframe>s on other domains.
+
+Why: Stops clickjacking attacks.
+
+SAMEORIGIN → Only allow embedding your own pages, not from other sites.
+
+always → Ensures header is sent even on errors.
+
+2️⃣ add_header X-Content-Type-Options "nosniff" always;
+
+Purpose: Stops browsers from trying to “guess” the content type of a file.
+
+Why: Prevents MIME-type sniffing attacks (e.g., executing malicious scripts).
+
+nosniff → Tells browser to trust the declared Content-Type header.
+
+3️⃣ add_header X-XSS-Protection "1; mode=block" always;
+
+Purpose: Enables the browser’s built-in XSS (cross-site scripting) filter.
+
+1 → Enable XSS filter.
+
+mode=block → If an attack is detected, block rendering the page.
+
+Note: Modern browsers have mostly deprecated this because they rely on Content-Security-Policy instead, but it’s still harmless to include.
+
+4️⃣ add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+Purpose: Controls what referrer information (the previous page URL) is sent when users click links.
+
+no-referrer-when-downgrade → Send the referrer only when navigating from HTTPS → HTTPS. Don’t send it when going from HTTPS → HTTP.
+
+Why: Protects privacy and avoids leaking sensitive URLs.
+
+5️⃣ add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+Purpose: Enforces HTTPS.
+
+max-age=31536000 → Browsers will remember to use HTTPS for 1 year.
+
+includeSubDomains → Applies HTTPS enforcement to all subdomains.
+
+preload → Allows your domain to be added to browser preload lists (HTTPS-only by default).
