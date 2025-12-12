@@ -1,0 +1,13 @@
+ # Basic HTTP Authentication
+    location /files/ {
+        auth_basic "Restricted Content";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+
+        root /var/www/protected_files;
+        autoindex on;  # optional: show folder listing
+    }
+
+    # If you want dynamic auth with backend and X-Accel-Redirect
+    location /protected/ {
+        internal;  # Only accessible via X-Accel-Redirect
+    }
