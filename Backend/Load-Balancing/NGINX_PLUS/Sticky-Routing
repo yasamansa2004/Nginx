@@ -1,0 +1,25 @@
+# نگاشت route از کوکی
+map $cookie_jsessionid $route_cookie {
+    ~.+\.(?P<route>\w+)$ $route;
+}
+
+# نگاشت route از URI
+map $request_uri $route_uri {
+    ~jsessionid=.+\.(?P<route>\w+)$ $route;
+}
+
+upstream backend {
+    server backend1.example.com route=a;
+    server backend2.example.com route=b;
+
+    sticky route $route_cookie $route_uri;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        proxy_pass http://backend;
+    }
+}
