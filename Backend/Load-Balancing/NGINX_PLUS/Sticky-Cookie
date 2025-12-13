@@ -1,0 +1,23 @@
+upstream backend {
+    server backend1.example.com;
+    server backend2.example.com;
+
+    sticky cookie affinity
+        expires=1h
+        domain=.example.com
+        httponly
+        secure
+        path=/;
+}
+
+server {
+    listen 443 ssl;
+    server_name example.com;
+
+    ssl_certificate /etc/ssl/certs/example.crt;
+    ssl_certificate_key /etc/ssl/private/example.key;
+
+    location / {
+        proxy_pass http://backend;
+    }
+}
