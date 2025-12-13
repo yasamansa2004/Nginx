@@ -3,16 +3,19 @@
 
 # Upstream backend servers
 upstream backend_app {
-    server 127.0.0.1:5000;      # backend server 1
-    # server 127.0.0.1:5001;    # optional second backend
+    server 10.10.12.45:80 weight=1;
+    server app.example.com:80 weight=2;
+    server spare.example.com:80 backup   
     keepalive 16;
 }
+
 # HTTP: redirect to HTTPS
 server {
     listen 80;
     server_name api.example.com;
     return 301 https://$host$request_uri;
 }
+
 # HTTPS server
 server {
     listen 443 ssl http2;
