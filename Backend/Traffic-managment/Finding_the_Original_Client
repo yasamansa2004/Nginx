@@ -1,0 +1,56 @@
+Finding the Original Client
+Problem
+You need to find the original client IP address because there are proxies in
+front of the NGINX server.
+You may find that if you’re using a proxy in front of NGINX, NGINX will
+pick up the proxy’s IP address rather than the client’s. For this you can use
+the geoip_proxy directive to instruct NGINX to use the X-Forwarded-For
+header when connections are opened from a given range. The geoip_proxy
+directive takes an address or a CIDR range. When there are multiple proxies
+passing traffic in front of NGINX, you can use the geoip_proxy_recursive
+directive to recursively search through X-Forwarded-For addresses to find
+the originating client. You will want to use something like this when utilizing
+load balancers such as Amazon Web Services Elastic Load Balancing (AWS
+ELB), Google’s load balancer, or Microsoft Azure’s load balancer in front of
+NGINX
+
+
+
+
+load_module "/usr/lib64/nginx/modules/ngx_http_geoip_module.so";
+
+http {
+
+    geoip_country /etc/nginx/geoip/GeoIP.dat;
+    geoip_city /etc/nginx/geoip/GeoLiteCity.dat;
+
+    # بازه IP لودبالنسر / پروکسی
+    geoip_proxy 10.0.0.0/8;
+    geoip_proxy 192.168.0.0/16;
+    geoip_proxy_recursive on;
+
+    log_format geoip_log
+        '$remote_addr '
+        'xff=$http_x_forwarded_for '
+        'country=$geoip_country_code '
+        'city=$geoip_city';
+
+    access_log /var/log/nginx/access.log geoip_log;
+
+    server {
+        listen 443 ssl;
+        server_name example.com;
+
+        location / {
+            proxy_pass http://backend_app;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+}
+
+
+
+خروجی لاگ نمونه#
+10.0.1.25 xff=185.10.59.2, 10.0.1.25 country=IR city=Tehran
