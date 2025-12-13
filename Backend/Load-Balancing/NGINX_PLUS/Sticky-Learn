@@ -1,0 +1,18 @@
+upstream backend {
+    server backend1.example.com:8080;
+    server backend2.example.com:8081;
+
+    sticky learn
+        create=$upstream_cookie_SESSIONID
+        lookup=$cookie_SESSIONID
+        zone=client_sessions:2m;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        proxy_pass http://backend;
+    }
+}
