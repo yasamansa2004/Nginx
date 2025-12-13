@@ -1,0 +1,13 @@
+upstream backend {
+    server backend1.example.com;
+    server backend2.example.com drain;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        proxy_pass http://backend;
+    }
+}
