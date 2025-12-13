@@ -1,0 +1,32 @@
+http {
+
+    # محدودیت اتصال
+    limit_conn_zone $binary_remote_addr zone=perip:10m;
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        location /download/ {
+
+            # محدودیت تعداد اتصال
+            limit_conn perip 2;
+
+            # محدودیت پهنای باند
+            limit_rate_after 20m;
+            limit_rate 512k;
+
+            root /var/www/files;
+            autoindex on;
+        }
+    }
+}
+
+
+رای فایل‌های بزرگ همیشه از limit_rate_after استفاده کن
+
+limit_rate را با $limit_rate برای کاربران خاص داینامیک کن
+
+محدودیت اتصال و پهنای باند را با هم استفاده کن
+
+برای CDN یا دانلود عمومی، این تنظیم بسیار کاربردی است
