@@ -1,0 +1,68 @@
+Scenario:
+Only users from Iran (IR) and Germany (DE) are allowed. All other countries receive 403 Forbidden
+GeoIP country code is logged and sent to the backend
+
+
+#Load the GeoIP module (main context)
+load_module "/usr/lib64/nginx/modules/ngx_http_geoip_module.so";
+
+#http context configuration
+http {
+
+    # Enable GeoIP country database
+    geoip_country /etc/nginx/geoip/GeoIP.dat;
+
+    # Define allowed countries
+    map $geoip_country_code $country_allowed {
+        default 0;
+        IR 1;
+        DE 1;
+    }
+
+    # Log format including country code
+    log_format geoip_log
+        '$remote_addr - $remote_user [$time_local] '
+        '"$request" $status '
+        'country=$geoip_country_code';
+
+    access_log /var/log/nginx/access.log geoip_log;
+
+    include /etc/nginx/conf.d/*.conf;
+}
+
+#Backend upstream definition
+upstream backend_app {
+    server 127.0.0.1:8000;
+}
+
+#Server block
+server {
+    listen 443 ssl;
+    server_name example.com;
+
+    ssl_certificate     /etc/ssl/certs/example.crt;
+    ssl_certificate_key /etc/ssl/private/example.key;
+
+    # Deny access if country is not allowed
+    if ($country_allowed = 0) {
+        return 403;
+    }
+
+    location / {
+        proxy_pass http://backend_app;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Country-Code $geoip_country_code;
+    }
+}
+
+
+
+#Sample access log:
+185.10.59.2 - - [12/Dec/2025:10:12:41 +0330]
+"GET / HTTP/1.1" 200 country=IR
+
+#Blocked reques:
+91.200.12.8 - - [12/Dec/2025:10:13:02 +0330]
+"GET / HTTP/1.1" 403 country=RU
+
