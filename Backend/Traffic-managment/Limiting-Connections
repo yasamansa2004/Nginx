@@ -1,0 +1,57 @@
+Problem:
+You need to limit the number of simultaneous connections based on a predefined key, typically the client’s IP address, to prevent abuse or excessive load.
+
+Solution:
+Create a shared memory zone to store connection metrics.
+Use the limit_conn directive to restrict the number of open connections per key.
+
+
+http {
+    # Create shared memory zone for tracking connections per client IP
+    limit_conn_zone $binary_remote_addr zone=limitbyaddr:10m;
+
+    # Set HTTP status code when connection limit is exceeded
+    limit_conn_status 429;
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        # Limit to 40 connections per client IP
+        limit_conn limitbyaddr 40;
+
+        location / {
+            proxy_pass http://backend;
+        }
+    }
+}
+
+
+Explanation:
+limit_conn_zone $binary_remote_addr zone=limitbyaddr:10m;
+Defines a shared memory zone named limitbyaddr.
+$binary_remote_addr is the predefined key (client IP in binary form).
+10m is the size of shared memory (10 MB).
+limit_conn limitbyaddr 40;
+Limits connections per key (here, per IP) to 40 simultaneous connections.
+limit_conn_status 429;
+Returns HTTP 429 Too Many Requests when the limit is exceeded.
+Default is 503, but 429 is preferable for client-side errors.
+Both limit_conn and limit_conn_status can be used in http, server, or location context.
+Important Considerations
+Using IP as the key can be risky if multiple users share the same IP (e.g., behind NAT).
+You can use other variables, such as session cookies, for more precise limits at the application level.
+The limit_conn_zone directive is only valid in the http context.
+Testing Connection Limits
+Testing live traffic is often tricky. You can simulate and analyze without blocking users:
+Use dry-run mode for request limiting (similar to limit_req_dry_run) to log status without enforcing limits.
+Check $limit_req_status in access logs to evaluate traffic behavior.
+
+Possible values of $limit_req_status:
+PASSED → Request allowe
+DELAYED → Request delayed
+REJECTED → Request rejected
+DELAYED_DRY_RUN → Delayed in dry-run mode
+REJECTED_DRY_RUN → Rejected in dry-run mode
+This allows you to fine-tune limits safely before enforcing them.
+
