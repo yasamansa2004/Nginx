@@ -1,0 +1,13 @@
+upstream api_backend {
+    least_conn;
+    server 10.0.0.10 weight=2;
+    server 10.0.0.11;
+}
+
+server {
+    listen 80;
+
+    location /api/ {
+        proxy_pass http://api_backend;
+    }
+}
