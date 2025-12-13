@@ -1,0 +1,16 @@
+upstream backend {
+    zone backend 64k;
+
+    # سرورها به تدریج به pool اضافه می‌شوند
+    server server1.example.com slow_start=20s;
+    server server2.example.com slow_start=15s;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        proxy_pass http://backend;
+    }
+}
