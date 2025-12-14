@@ -55,3 +55,23 @@ DELAYED_DRY_RUN → Delayed in dry-run mode
 REJECTED_DRY_RUN → Rejected in dry-run mode
 This allows you to fine-tune limits safely before enforcing them.
 
+
+
+
+
+
+https{
+    limit_conn_zone $server_name zone-new_zone:5m;
+    limit_conn_zone $server_name zone-new_zone:512m;
+
+    server_name{
+        listen 80;
+        root /var/www/html/;
+        location /test_zone {
+
+            limit_req zone=onerps burst=5
+        }
+    }
+}
+
+after 5 request show page with deley
